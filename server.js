@@ -1,13 +1,14 @@
 require("dotenv").config();
 
 const express = require("express");
+const { rateLimit } = require("express-rate-limit");
 const fs = require("node:fs");
 const path = require("node:path");
 const OpenAI = require("openai").default;
 const { toFile } = require("openai/uploads");
 const { PACKAGE_CATALOG, PRODUCT_REFERENCES } = require("./catalog");
 
-const HOST = "127.0.0.1";
+const HOST = process.env.HOST || "127.0.0.1";
 const PORT = Number(process.env.PORT || 3000);
 const ROOT = __dirname;
 const MAX_REFERENCE_BYTES = 8 * 1024 * 1024;
@@ -40,12 +41,23 @@ const apiKey = process.env.OPENAI_API_KEY;
 const openai = apiKey ? new OpenAI({ apiKey }) : null;
 
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 app.use((request, response, next) => {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-Frame-Options", "DENY");
   next();
 });
 app.use(express.json({ limit: "12mb" }));
+
+const limitDesignRequests = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: {
+    message: "Se alcanzó el límite temporal de solicitudes de diseño. Intenta nuevamente en unos minutos."
+  }
+});
 
 function getPackageId(entry) {
   return `ENV${entry.item.padStart(3, "0")}`;
@@ -257,6 +269,10 @@ app.get("/api/envases", (request, response) => {
   response.json(PACKAGE_CATALOG.map(publicPackage));
 });
 
+app.get("/api/health", (request, response) => {
+  response.json({ status: "ok" });
+});
+
 app.get("/api/envases/:id/imagen", (request, response) => {
   const entry = findPackage(request.params.id);
   if (!entry) return response.status(404).json({ message: "El envase no existe." });
@@ -265,7 +281,7 @@ app.get("/api/envases/:id/imagen", (request, response) => {
   return response.sendFile(imagePath);
 });
 
-app.post("/api/diseno", async (request, response) => {
+app.post("/api/diseno", limitDesignRequests, async (request, response) => {
   if (!requireOpenAI(response)) return;
   const entry = findPackage(request.body?.envaseId);
   const message = cleanText(request.body?.mensaje, 2000);
@@ -388,7 +404,7 @@ app.post("/api/diseno", async (request, response) => {
   }
 });
 
-app.post("/api/generar-imagen", async (request, response) => {
+app.post("/api/generar-imagen", limitDesignRequests, async (request, response) => {
   if (!requireOpenAI(response)) return;
   const entry = findPackage(request.body?.envaseId);
   const proposal = normalizeProposal(request.body?.propuesta);

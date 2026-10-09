@@ -23,6 +23,17 @@ Después de actualizar archivos del servidor, detén el proceso anterior con `Ct
 
 El servidor no hace llamadas de prueba a OpenAI al iniciarse. Si falta la clave, la identificación y las fichas siguen disponibles; el chat y la generación visual informan que el servicio IA no está configurado. Se puede definir `OPENAI_TEXT_MODEL` o `OPENAI_IMAGE_MODEL` en el entorno para cambiar los modelos; por defecto se usan `gpt-4.1-mini` y `gpt-image-1`.
 
+## Publicar en Render
+
+El archivo `render.yaml` configura el servicio web, el chequeo de salud, el comando de inicio y la variable secreta `OPENAI_API_KEY` sin guardar su valor en el repositorio.
+
+1. En Render, crea un **Blueprint** desde el repositorio GitHub `Daniela-Rojas-17/INNNOVATION-PACKAGING-STUDIO` y selecciona la rama `main`.
+2. Cuando Render solicite `OPENAI_API_KEY`, introduce la clave en el campo privado del panel de Render. No la pongas en `render.yaml`, GitHub, ni en un mensaje.
+3. Confirma la creación del servicio. Render ejecutará `npm ci` y `npm start`; el servicio queda disponible bajo una URL HTTPS `onrender.com`.
+4. Prueba la URL pública y comparte ese enlace, no el enlace de GitHub.
+
+El plan gratuito puede suspender el servicio tras un periodo sin actividad, así que la primera visita puede tardar mientras Render lo reactiva. El endpoint `/api/health` permite comprobar su estado. Las solicitudes de diseño tienen un límite de 10 por dirección IP cada 15 minutos; este límite reduce abuso, pero no reemplaza el control del consumo y el presupuesto de OpenAI.
+
 ## Diseño asistido por IA
 
 El chat trabaja como director de arte y diseñador gráfico de packaging. Recibe el envase reconocido, las dimensiones de la ficha y el historial de esa sesión. Cuando se pide Simoniz o Binner, aplica una dirección diferenciada inspirada en sus códigos visuales; si hay un producto de esa marca que coincide en forma y capacidad, utiliza su imagen solo como referencia de estilo, nunca para copiar su etiqueta. Si no se especifica marca, genera rutas originales sin atribuirlas a una marca.
