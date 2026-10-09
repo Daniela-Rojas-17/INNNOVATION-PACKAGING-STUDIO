@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4fbff">
+    <title>EnvaseLab | Innovation Packaging Studio</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4/dist/tf.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js" defer></script>
+    <script src="catalog.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body id="app-top">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Identificador de envases, inicio">
+        <span class="brand-mark" aria-hidden="true">E</span>
+        <span>Envase<span class="brand-light">Lab</span></span>
+      </a>
+      <nav class="main-nav" aria-label="Navegación principal">
+        <a href="#design-guide">Estudio IA</a>
+      </nav>
+      <div class="topbar-context">
+        <span class="topbar-note">INNOVATION PACKAGING STUDIO</span>
+        <span class="topbar-divider" aria-hidden="true"></span>
+        <span class="topbar-section">Espacio de trabajo</span>
+      </div>
+      <a class="topbar-mode" href="#workflow"><span class="topbar-mode-dot"></span>Comenzar <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <aside id="server-notice" class="server-notice" role="alert" hidden>
+      <strong>El chat de diseño necesita el servidor local.</strong>
+      <span>En la carpeta del proyecto, ejecuta <code>node server.js</code> y abre la aplicación desde el servidor, no desde <code>index.html</code>.</span>
+      <a href="http://127.0.0.1:3000">Abrir EnvaseLab en http://127.0.0.1:3000</a>
+    </aside>
+
+    <main id="main-content" class="page-shell">
+      <section class="intro">
+        <div class="intro-copy-block">
+          <p class="eyebrow"><span class="intro-spark" aria-hidden="true">✳</span> ESTUDIO CREATIVO DE PACKAGING CON IA</p>
+          <h1>INNOVATION<br><span>PACKAGING STUDIO</span></h1>
+          <p class="intro-copy">Explora, consulta y desarrolla</p>
+          <div class="intro-actions">
+            <a class="hero-button" href="#workflow">Explorar envases <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="hero-trust"><span class="hero-trust-dot"></span> Un espacio para imaginar lo que sigue</div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="hero-orb hero-orb-a" aria-hidden="true"></div>
+          <div class="hero-orb hero-orb-b" aria-hidden="true"></div>
+          <div class="hero-halo" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section id="workflow" class="workspace" aria-label="Identificación y consulta">
+        <div id="capture-panel" class="capture-panel">
+          <div class="section-heading">
+            <div>
+              <span class="step-label">PASO 1</span>
+              <h2>Identifica el envase</h2>
+            </div>
+            <span id="model-status" class="status-pill" role="status">
+              <span class="status-dot"></span>
+              Cargando modelo…
+            </span>
+          </div>
+
+          <div class="capture-tabs" role="group" aria-label="Fuente de imagen">
+            <button id="upload-tab" class="tab-button is-active" type="button">Subir una imagen</button>
+            <button id="camera-tab" class="tab-button" type="button">Usar cámara</button>
+          </div>
+
+          <div id="upload-panel" class="capture-stage">
+            <label class="upload-zone" for="image-input">
+              <span class="upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <strong>Elige una foto del envase</strong>
+              <span>JPG, PNG o WEBP</span>
+              <span class="browse-button">Seleccionar imagen</span>
+              <input id="image-input" type="file" accept="image/*">
+            </label>
+            <div id="image-preview-wrap" class="preview-wrap" hidden>
+              <img id="image-preview" alt="Vista previa del envase seleccionado">
+              <button id="change-image" class="text-button" type="button">Cambiar imagen</button>
+            </div>
+          </div>
+
+          <div id="camera-panel" class="capture-stage camera-stage" hidden>
+            <video id="camera-video" autoplay playsinline muted></video>
+            <div id="camera-placeholder" class="camera-placeholder">
+              <span class="camera-icon" aria-hidden="true">◎</span>
+              <span>Activa la cámara para mostrar el envase</span>
+            </div>
+            <button id="camera-start" class="secondary-button" type="button">Activar cámara</button>
+          </div>
+
+          <button id="classify-button" class="primary-button" type="button" disabled>
+            <span>Reconocer envase</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <p id="capture-message" class="helper-text" role="status">Carga del modelo en curso…</p>
+        </div>
+
+        <div id="result-panel" class="result-panel">
+          <div class="section-heading result-heading">
+            <div>
+              <span class="step-label">PASO 2</span>
+              <h2>Resultado</h2>
+            </div>
+          </div>
+          <div id="empty-result" class="empty-result">
+            <div class="empty-illustration" aria-hidden="true">
+              <span class="bottle bottle-back"></span>
+              <span class="bottle bottle-front"></span>
+            </div>
+            <strong>Tu ficha aparecerá aquí</strong>
+            <p>La cámara o imagen debe mostrar un solo envase, con buena luz y de frente.</p>
+          </div>
+          <div id="prediction-result" class="prediction-result" hidden>
+            <p id="prediction-message" class="prediction-message" role="status"></p>
+            <div id="prediction-details" hidden>
+              <div class="recognized-label">
+                <span class="recognized-check" aria-hidden="true">✓</span>
+                <div>
+                  <span class="recognized-caption">ENVASE RECONOCIDO</span>
+                  <h3 id="recognized-name"></h3>
+                </div>
+                <span id="confidence" class="confidence"></span>
+              </div>
+              <div id="alternatives" class="alternatives" aria-label="Otras clases detectadas"></div>
+              <button id="show-sheet" class="primary-button result-action" type="button">
+                <span>Ver ficha técnica</span>
+                <span aria-hidden="true">↓</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="technical-sheet" class="technical-sheet" aria-live="polite" hidden>
+        <div class="sheet-topline">
+          <div>
+            <p class="eyebrow">ESPECIFICACIONES DEL ENVASE</p>
+            <h2 id="sheet-title"></h2>
+          </div>
+          <span id="sheet-item" class="item-badge"></span>
+        </div>
+        <dl id="specifications" class="specifications"></dl>
+        <button id="design-recognized" class="primary-button design-recognized" type="button">
+          <span>Diseñar este envase</span><span aria-hidden="true">✦</span>
+        </button>
+        <div class="reference-section">
+          <div id="reference-content">
+            <div class="reference-heading">
+              <div>
+                <p class="eyebrow">REFERENCIAS VISUALES</p>
+                <h3>Envases compatibles por forma y contenido</h3>
+              </div>
+              <span id="reference-count" class="reference-count"></span>
+            </div>
+            <p class="reference-note">Se muestran solo productos de Simoniz y Binner cuya forma de envase y contenido en mililitros coinciden con los de esta ficha. Las referencias visuales no sustituyen las especificaciones técnicas.</p>
+            <div id="reference-gallery" class="reference-gallery"></div>
+            <div class="brand-links">
+              <a href="https://simonizauto.com/" target="_blank" rel="noopener noreferrer">Visitar Simoniz <span aria-hidden="true">↗</span></a>
+              <a href="https://binner.com.co/" target="_blank" rel="noopener noreferrer">Visitar Binner <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+          <p id="no-matching-examples" class="no-matching-examples" hidden>PRODUCTO EN DESARROLLO POR SIMONIZ Y BINNER. ¡PRODUCTO NUEVO!</p>
+        </div>
+      </section>
+
+      <section id="design-workspace" class="design-workspace" hidden aria-labelledby="design-title">
+        <div class="selected-package-panel">
+          <div class="design-heading">
+            <div>
+              <p class="eyebrow">ENVASE SELECCIONADO</p>
+              <h2 id="selected-package-name"></h2>
+            </div>
+            <button id="change-package" class="secondary-button" type="button">Cambiar envase</button>
+          </div>
+          <div class="selected-package-content">
+            <img id="selected-package-image" class="selected-package-image" alt="" hidden>
+            <div id="selected-package-placeholder" class="selected-package-placeholder">Sin imagen de referencia</div>
+            <dl id="selected-package-details" class="selected-package-details"></dl>
+          </div>
+          <label id="reference-upload-label" class="reference-upload-label" for="design-reference-input">Adjuntar o cambiar foto de referencia</label>
+          <input id="design-reference-input" class="design-reference-input" type="file" accept="image/png,image/jpeg,image/webp">
+          <p id="reference-upload-status" class="helper-text">La foto ayuda a conservar la geometría real al generar la propuesta visual.</p>
+        </div>
+
+        <div class="design-chat-panel">
+          <div class="design-heading">
+            <div>
+              <p class="eyebrow">ASISTENTE DE DISEÑO IA</p>
+              <h2 id="design-title">Diseña una propuesta para tu envase</h2>
+            </div>
+          </div>
+          <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
+          <form id="chat-form" class="chat-form">
+            <label class="visually-hidden" for="chat-input">Instrucciones para el diseño</label>
+            <textarea id="chat-input" rows="3" maxlength="2000" placeholder="Ej.: Diseña una propuesta premium, deportiva y moderna…" required disabled></textarea>
+            <button id="send-design" class="primary-button" type="submit" disabled>
+              <span>Crear propuesta</span><span aria-hidden="true">→</span>
+            </button>
+          </form>
+          <p id="design-status" class="helper-text" role="status"></p>
+          <section id="proposal-panel" class="proposal-panel" hidden aria-labelledby="proposal-title">
+            <div class="proposal-heading">
+              <div>
+                <p class="eyebrow">CONCEPTO DE DISEÑO</p>
+                <h3 id="proposal-title">Propuesta</h3>
+              </div>
+            </div>
+            <section class="proposal-directions" aria-labelledby="proposal-directions-title">
+              <div class="proposal-directions-heading">
+                <div>
+                  <p class="eyebrow">EXPLORA ALTERNATIVAS</p>
+                  <h4 id="proposal-directions-title">Elige una ruta creativa</h4>
+                </div>
+                <span class="directions-count">3 propuestas</span>
+              </div>
+              <div id="proposal-options" class="proposal-route-grid" role="group" aria-label="Rutas creativas de diseño"></div>
+            </section>
+            <div id="proposal-content" class="proposal-content"></div>
+            <button id="generate-image" class="primary-button" type="button">
+              <span>Generar propuesta visual</span><span aria-hidden="true">✦</span>
+            </button>
+            <div id="visual-result" class="visual-result" hidden>
+              <h3>Propuesta visual</h3>
+              <img id="generated-image" alt="Propuesta visual generada para el envase seleccionado">
+              <a id="download-image" class="secondary-button download-image" download="propuesta-envase.png">Descargar imagen</a>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="design-guide" class="design-guide" aria-label="Proceso de diseño con inteligencia artificial">
+        <span class="guide-orb" aria-hidden="true"></span>
+        <div class="guide-icon" aria-hidden="true">✳</div>
+        <div><p class="eyebrow">DEL ENVASE A LA IDEA</p><h2>Tu próximo concepto empieza con una forma.</h2><p>Identifica un recipiente, revisa su ficha y conversa con el asistente para explorar direcciones visuales.</p></div>
+        <a id="enter-design-studio" class="guide-link" href="#workflow">Entrar al estudio <span aria-hidden="true">↗</span></a>
+      </section>
+
+      <footer class="site-footer">
+        <a class="brand footer-brand" href="#app-top" aria-label="EnvaseLab, volver al inicio"><span class="brand-mark" aria-hidden="true">E</span><span>Envase<span class="brand-light">Lab</span></span></a>
+        <p>Un estudio para diseñar posibilidades.</p>
+        <nav aria-label="Enlaces de marcas"><a href="https://simonizauto.com/" target="_blank" rel="noopener noreferrer">Simoniz ↗</a><a href="https://binner.com.co/" target="_blank" rel="noopener noreferrer">Binner ↗</a></nav>
+      </footer>
+      <p class="footer-note">Los datos dimensionales se transcribieron de la hoja de cálculo adjunta. Las referencias de productos son externas y pueden cambiar en los sitios de las marcas.</p>
+    </main>
+  </body>
+</html>
