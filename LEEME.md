@@ -3,7 +3,7 @@
 La aplicación conserva el flujo de identificación existente:
 
 1. En el **Paso 1**, carga una foto o activa la cámara.
-2. En el **Paso 2**, Teachable Machine identifica el envase. Solo se acepta una coincidencia de al menos 95 %; si la imagen completa no alcanza ese nivel, se revisan recortes en escala de grises con la zona gráfica central neutralizada y se acepta únicamente una clase confirmada en más de una vista. Si no hay coincidencia suficiente, se muestra `NO EXISTE ESTE ENVASE`.
+2. En el **Paso 2**, Teachable Machine propone una clase con al menos 95 % de confianza y la aplicación muestra una foto de referencia del envase entrenado. Compara ambas imágenes y confirma la coincidencia antes de abrir la ficha; si la forma no coincide, selecciona **No coincide** y no se mostrará ninguna ficha. La confianza del modelo es una puntuación, no una garantía de que la clasificación sea correcta. Si la confianza queda por debajo del 95 %, se muestra `NO EXISTE ESTE ENVASE`.
 3. La ficha técnica muestra los datos de `Ficha Tecnica.xlsx` y únicamente ejemplos Simoniz/Binner cuya forma y capacidad coinciden. Si no hay ejemplos coincidentes, aparece `PRODUCTO EN DESARROLLO POR SIMONIZ Y BINNER. ¡PRODUCTO NUEVO!`. La cantidad de referencias varía según los productos compatibles disponibles en los sitios oficiales; no se completan cinco a costa de mostrar envases de otra forma o capacidad.
 4. Pulsa **Diseñar este envase** desde la ficha para abrir el chat de diseño. **Cambiar envase** vuelve al Paso 1.
 
@@ -52,6 +52,6 @@ El modelo de Teachable Machine (`https://teachablemachine.withgoogle.com/models/
 
 ### Imágenes con etiquetas y nuevos envases
 
-El análisis alternativo reduce la influencia del color y de la zona central impresa de la etiqueta, y busca la forma entre varios recortes de la imagen. Esto permite reconocer envases ya entrenados aunque tengan una presentación gráfica diferente, como el bidón Binner del ejemplo compartido. La ficha devuelta sigue correspondiendo a una de las diez clases actuales y su capacidad registrada; la aplicación no puede determinar con fiabilidad una capacidad desconocida solo a partir de una etiqueta o fotografía.
+La aplicación contrasta visualmente cada predicción con una imagen del envase de entrenamiento y solicita confirmación de la persona antes de mostrar datos dimensionales. Hay una imagen de entrenamiento de referencia para cada una de las diez clases. Teachable Machine puede asignar alta confianza a una clase equivocada cuando una foto comercial o un objeto desconocido no se parece a sus ejemplos de entrenamiento; por eso, la confianza no se presenta como verificación de forma ni capacidad.
 
 Este ajuste no reentrena Teachable Machine ni añade clases automáticamente. Para incorporar un envase de forma permanente, agrega al conjunto de entrenamiento varias fotos del recipiente vacío y etiquetado, con distintos fondos, ángulos e iluminación; conserva una sola clase por combinación de forma y capacidad, vuelve a entrenar y publicar el modelo y actualiza `MODEL_URL` en `app.js`.

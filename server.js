@@ -16,14 +16,14 @@ const OPENAI_TEXT_MODEL = process.env.OPENAI_TEXT_MODEL || "gpt-4.1-mini";
 const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-1";
 const TRAINING_IMAGE_FOLDERS = {
   "01": ["AEROSOL 400ML ALTO", "03.png"],
-  "02": null,
+  "02": ["AEROSOL 400ML BAJO", "03.png"],
   "03": ["AEROSOL 250ML", "03.png"],
-  "04": null,
-  "05": null,
+  "04": ["DIAMANTE 700ML", "03.png"],
+  "05": ["DIAMANTE 500ML", "03.png"],
   "06": ["BIDON CON ASA GALÓN CUADRADO", "03.png"],
   "07": ["BIDON CON ASA GALÓN OVALO", "03.png"],
-  "08": null,
-  "09": null,
+  "08": ["ESTRIADO LITRO", "03.png"],
+  "09": ["ESTRIADO 300ML", "03.png"],
   "10": ["CILINDRO 250ML", "03.png"]
 };
 const MIME_EXTENSIONS = {

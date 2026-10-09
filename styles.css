@@ -2538,6 +2538,69 @@ body {
   background: linear-gradient(90deg, #63cbb3, #6798ec);
 }
 
+.package-verification {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dce9f4;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #f8fcff, #f4fbfa);
+}
+
+.package-verification p {
+  margin: 0;
+  color: #52687a;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.training-reference {
+  display: block;
+  width: min(100%, 210px);
+  height: 190px;
+  margin: 0 auto;
+  border: 1px solid #e5edf3;
+  border-radius: 12px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.verification-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.verification-actions .primary-button,
+.verification-actions .secondary-button {
+  justify-content: center;
+  min-height: 42px;
+  margin: 0;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.verification-actions .secondary-button {
+  border: 1px solid #d6e3ee;
+  border-radius: 999px;
+  background: #fff;
+  color: #315c7b;
+  cursor: pointer;
+}
+
+.verification-actions .secondary-button:hover {
+  border-color: #91bacd;
+  background: #f1f8fc;
+}
+
+@media (max-width: 420px) {
+  .verification-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 .technical-sheet {
   margin-top: 22px;
   padding: 30px;

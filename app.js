@@ -34,10 +34,14 @@
     predictionResult: document.querySelector("#prediction-result"),
     predictionMessage: document.querySelector("#prediction-message"),
     predictionDetails: document.querySelector("#prediction-details"),
+    recognizedCaption: document.querySelector(".recognized-caption"),
     recognizedName: document.querySelector("#recognized-name"),
     confidence: document.querySelector("#confidence"),
     alternatives: document.querySelector("#alternatives"),
-    showSheet: document.querySelector("#show-sheet"),
+    verificationPanel: document.querySelector("#package-verification"),
+    trainingReference: document.querySelector("#training-reference"),
+    confirmPackage: document.querySelector("#confirm-package"),
+    rejectPackage: document.querySelector("#reject-package"),
     technicalSheet: document.querySelector("#technical-sheet"),
     sheetTitle: document.querySelector("#sheet-title"),
     sheetItem: document.querySelector("#sheet-item"),
@@ -77,6 +81,7 @@
   let activeTab = "upload";
   let currentObjectUrl = null;
   let selectedPackage = null;
+  let pendingPackage = null;
   let catalogEntries = [];
   let designPackage = null;
   let designHistory = [];
@@ -462,6 +467,8 @@
 
   function showNoMatchingPackage() {
     resetDesignWorkspace();
+    pendingPackage = null;
+    elements.verificationPanel.hidden = true;
     elements.technicalSheet.hidden = true;
     selectedPackage = null;
     showPrediction("NO EXISTE ESTE ENVASE", true);
@@ -470,7 +477,9 @@
 
   function resetResult() {
     resetDesignWorkspace();
+    pendingPackage = null;
     selectedPackage = null;
+    elements.verificationPanel.hidden = true;
     elements.technicalSheet.hidden = true;
     elements.predictionResult.hidden = true;
     elements.predictionDetails.hidden = true;
@@ -486,136 +495,6 @@
       width: source.naturalWidth || source.videoWidth || source.width,
       height: source.naturalHeight || source.videoHeight || source.height
     };
-  }
-
-  function shapeFocusedCrops(source) {
-    const { width, height } = sourceDimensions(source);
-    if (!width || !height) return [];
-
-    const sampleScale = Math.min(1, 320 / width, 320 / height);
-    const sampleWidth = Math.max(1, Math.round(width * sampleScale));
-    const sampleHeight = Math.max(1, Math.round(height * sampleScale));
-    const sampleCanvas = document.createElement("canvas");
-    sampleCanvas.width = sampleWidth;
-    sampleCanvas.height = sampleHeight;
-    const sampleContext = sampleCanvas.getContext("2d", { willReadFrequently: true });
-    sampleContext.drawImage(source, 0, 0, sampleWidth, sampleHeight);
-    const pixels = sampleContext.getImageData(0, 0, sampleWidth, sampleHeight).data;
-    let weightTotal = 0;
-    let weightedX = 0;
-    let weightedY = 0;
-
-    for (let y = Math.floor(sampleHeight * 0.2); y < sampleHeight * 0.8; y += 1) {
-      for (let x = 0; x < sampleWidth; x += 1) {
-        const offset = (y * sampleWidth + x) * 4;
-        const colorRange = Math.max(pixels[offset], pixels[offset + 1], pixels[offset + 2])
-          - Math.min(pixels[offset], pixels[offset + 1], pixels[offset + 2]);
-        if (colorRange < 55) continue;
-        weightTotal += colorRange;
-        weightedX += x * colorRange;
-        weightedY += y * colorRange;
-      }
-    }
-
-    if (weightTotal < 1000) {
-      weightTotal = 0;
-      weightedX = 0;
-      weightedY = 0;
-      for (let y = Math.floor(sampleHeight * 0.2); y < sampleHeight * 0.8 - 1; y += 1) {
-        for (let x = 0; x < sampleWidth - 1; x += 1) {
-          const offset = (y * sampleWidth + x) * 4;
-          const right = offset + 4;
-          const below = offset + sampleWidth * 4;
-          const luminance = 0.299 * pixels[offset] + 0.587 * pixels[offset + 1] + 0.114 * pixels[offset + 2];
-          const rightLuminance = 0.299 * pixels[right] + 0.587 * pixels[right + 1] + 0.114 * pixels[right + 2];
-          const belowLuminance = 0.299 * pixels[below] + 0.587 * pixels[below + 1] + 0.114 * pixels[below + 2];
-          const edgeStrength = Math.abs(luminance - rightLuminance) + Math.abs(luminance - belowLuminance);
-          if (edgeStrength < 24) continue;
-          weightTotal += edgeStrength;
-          weightedX += x * edgeStrength;
-          weightedY += y * edgeStrength;
-        }
-      }
-    }
-
-    if (weightTotal < 1000) return [];
-    const centerX = weightedX / weightTotal / sampleWidth;
-    const centerY = weightedY / weightTotal / sampleHeight;
-    const centers = [];
-    [0, 0.07, 0.14].forEach((offsetX) => {
-      [-0.04, 0.03, 0.1].forEach((offsetY) => {
-        centers.push({
-          x: Math.max(0.08, Math.min(0.92, centerX + offsetX)),
-          y: Math.max(0.12, Math.min(0.88, centerY + offsetY))
-        });
-      });
-    });
-
-    return centers.flatMap((center) => [0.16, 0.18, 0.24].map((scale) => {
-      const side = Math.min(width, height) * scale;
-      const crop = document.createElement("canvas");
-      crop.width = 224;
-      crop.height = 224;
-      const context = crop.getContext("2d");
-      context.fillStyle = "#fff";
-      context.fillRect(0, 0, crop.width, crop.height);
-      context.drawImage(
-        source,
-        center.x * width - side / 2,
-        center.y * height - side / 2,
-        side,
-        side,
-        0,
-        0,
-        crop.width,
-        crop.height
-      );
-
-      const image = context.getImageData(0, 0, crop.width, crop.height);
-      for (let index = 0; index < image.data.length; index += 4) {
-        const luminance = 0.299 * image.data[index]
-          + 0.587 * image.data[index + 1]
-          + 0.114 * image.data[index + 2];
-        image.data[index] = luminance;
-        image.data[index + 1] = luminance;
-        image.data[index + 2] = luminance;
-      }
-      context.putImageData(image, 0, 0);
-      // Neutralize the label area so the classifier relies more on the package silhouette.
-      context.fillStyle = "#fff";
-      context.fillRect(crop.width * 0.25, crop.height * 0.38, crop.width * 0.5, crop.height * 0.3);
-
-      return { canvas: crop, center, scale };
-    }));
-  }
-
-  async function shapeFocusedPrediction(source) {
-    const crops = shapeFocusedCrops(source);
-    const confidentPredictions = [];
-
-    for (const crop of crops) {
-      const predictions = (await model.predict(crop.canvas))
-        .sort((first, second) => second.probability - first.probability);
-      if (predictions[0].probability >= MIN_CONFIDENCE) {
-        confidentPredictions.push({ ...crop, predictions });
-      }
-    }
-
-    const supportedPredictions = confidentPredictions.filter((candidate) => (
-      confidentPredictions.some((other) => (
-        other !== candidate
-        && normalizeLabel(other.predictions[0].className) === normalizeLabel(candidate.predictions[0].className)
-        && Math.abs(other.center.x - candidate.center.x) <= 0.01
-        && Math.abs(other.center.y - candidate.center.y) <= 0.01
-        && other.scale !== candidate.scale
-      ))
-    ));
-    if (!supportedPredictions.length) return null;
-
-    supportedPredictions.sort((first, second) => (
-      second.predictions[0].probability - first.predictions[0].probability
-    ));
-    return supportedPredictions[0].predictions;
   }
 
   function drawAlternatives(predictions) {
@@ -701,6 +580,15 @@
     elements.technicalSheet.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function rejectPendingPackage() {
+    pendingPackage = null;
+    elements.verificationPanel.hidden = true;
+    elements.technicalSheet.hidden = true;
+    selectedPackage = null;
+    showPrediction("Coincidencia no confirmada. Toma otra foto y vuelve a identificar el envase.", true);
+    setCaptureMessage("No se mostró una ficha porque la forma no coincidió con la referencia. Prueba con una foto frontal y del envase completo.", true);
+  }
+
   async function classifyImage() {
     if (!model || !hasImage()) return;
 
@@ -715,37 +603,26 @@
         (entry) => normalizeLabel(entry.label) === normalizeLabel(predictions[0].className)
       );
 
-      let usedShapeFocusedPrediction = false;
-      if (!packageInfo || predictions[0].probability < MIN_CONFIDENCE) {
-        setCaptureMessage("Afinando la búsqueda por forma del envase, sin depender de su etiqueta…");
-        const shapePrediction = await shapeFocusedPrediction(source);
-        if (shapePrediction) {
-          predictions = shapePrediction;
-          packageInfo = PACKAGE_CATALOG.find(
-            (entry) => normalizeLabel(entry.label) === normalizeLabel(predictions[0].className)
-          );
-          usedShapeFocusedPrediction = Boolean(packageInfo);
-        }
-      }
-
       if (!packageInfo || predictions[0].probability < MIN_CONFIDENCE) {
         showNoMatchingPackage();
         return;
       }
 
       const topPrediction = predictions[0];
+      pendingPackage = packageInfo;
       drawAlternatives(predictions);
       elements.predictionMessage.hidden = true;
       elements.predictionDetails.hidden = false;
+      elements.recognizedCaption.textContent = "PREDICCIÓN DEL MODELO · POR CONFIRMAR";
       elements.recognizedName.textContent = packageInfo.name;
       elements.confidence.textContent = `${Math.round(topPrediction.probability * 100)}%`;
       elements.alternatives.hidden = false;
       elements.predictionResult.hidden = false;
       elements.emptyResult.hidden = true;
-      renderSheet(packageInfo);
-      setCaptureMessage(usedShapeFocusedPrediction
-        ? "Envase identificado por forma y capacidad, sin depender de la etiqueta."
-        : "Envase identificado. Puedes consultar la ficha técnica.");
+      elements.trainingReference.src = `/api/envases/ENV${packageInfo.item.padStart(3, "0")}/imagen`;
+      elements.trainingReference.alt = `Foto de referencia entrenada para ${packageInfo.name}`;
+      elements.verificationPanel.hidden = false;
+      setCaptureMessage("El modelo sugiere esta clase. Comprueba que la forma coincida con la referencia antes de abrir la ficha.");
     } catch (error) {
       showPrediction("No fue posible analizar esta imagen. Verifica la conexión al modelo e inténtalo nuevamente.", true);
       setCaptureMessage("Falló el análisis de la imagen. Revisa tu conexión y vuelve a intentarlo.", true);
@@ -811,9 +688,16 @@
   elements.cameraTab.addEventListener("click", () => setActiveTab("camera"));
   elements.cameraStart.addEventListener("click", startCamera);
   elements.classifyButton.addEventListener("click", classifyImage);
-  elements.showSheet.addEventListener("click", () => {
-    elements.technicalSheet.scrollIntoView({ behavior: "smooth", block: "start" });
+  elements.confirmPackage.addEventListener("click", () => {
+    if (!pendingPackage) return;
+    const confirmedPackage = pendingPackage;
+    pendingPackage = null;
+    elements.verificationPanel.hidden = true;
+    elements.recognizedCaption.textContent = "COINCIDENCIA CONFIRMADA";
+    renderSheet(confirmedPackage);
+    setCaptureMessage("Coincidencia confirmada. Se muestra la ficha técnica correspondiente.");
   });
+  elements.rejectPackage.addEventListener("click", rejectPendingPackage);
   elements.designRecognized.addEventListener("click", beginDesignForRecognizedPackage);
   elements.enterDesignStudio.addEventListener("click", (event) => {
     event.preventDefault();

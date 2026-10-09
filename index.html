@@ -125,16 +125,20 @@
               <div class="recognized-label">
                 <span class="recognized-check" aria-hidden="true">✓</span>
                 <div>
-                  <span class="recognized-caption">ENVASE RECONOCIDO</span>
+                  <span class="recognized-caption">PREDICCIÓN DEL MODELO · POR CONFIRMAR</span>
                   <h3 id="recognized-name"></h3>
                 </div>
                 <span id="confidence" class="confidence"></span>
               </div>
               <div id="alternatives" class="alternatives" aria-label="Otras clases detectadas"></div>
-              <button id="show-sheet" class="primary-button result-action" type="button">
-                <span>Ver ficha técnica</span>
-                <span aria-hidden="true">↓</span>
-              </button>
+              <section id="package-verification" class="package-verification" aria-live="polite" hidden>
+                <p>Compara el envase de tu foto con la referencia entrenada. La ficha solo se mostrará si confirmas que coinciden.</p>
+                <img id="training-reference" class="training-reference" alt="">
+                <div class="verification-actions">
+                  <button id="confirm-package" class="primary-button" type="button">Sí, coincide</button>
+                  <button id="reject-package" class="secondary-button" type="button">No coincide</button>
+                </div>
+              </section>
             </div>
           </div>
         </div>
